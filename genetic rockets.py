@@ -30,56 +30,49 @@ class DNA():
 		self.genes = []
 
 		gene = PVector.random2D()
-		#print(num_genes)
-		#print (gene.x, gene.y)
 		gene.mult(5)
-		#print(gene.x,gene.y)
 		self.genes.append(gene)
 		for j in range(1, num_genes):
-			if random.randint(1,100) < 70:
-				dx = self.genes[j-1].x
-				dy = self.genes[j-1].y
-				gene = PVector(dx,dy)
-				self.genes.append(gene)
+			if random.randint(1,100) < 90:
+				self.genes.append(self.genes[j-1])
 			else:
 				gene = PVector.random2D()
 				gene.mult(5)
 				self.genes.append(gene)
-			
-	
+				
 class Rocket():
 	def __init__(self, x,y, num_genes):
 		self.speed = PVector(0,0)
 		self.location = PVector(x,y)
-		self.accel = PVector(0, 0)
+		self.accel = PVector.random2D
 		self.radius = 2
-		self.color = (0,0,255)
+		self.color = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
 		self.stopped = False
+		self.hit_target = False
 		self.rect = 0
 		self.dna = DNA(num_genes)
-		self.accel = PVector(random.uniform(-1,1) , random.uniform(-1,1))
 		self.fitness = 0
 
 	def find_fitness(self, target):
 		distance = math.hypot(self.location.x - target.x, self.location.y-target.y)
-		print(distance)
-		self.fitness = (1/distance)**2
+		self.fitness = pow((1/distance),2)
 		if self.stopped:
-			self.fitness = self.fitness/10
+			self.fitness = self.fitness*.1
+
 		
 	def update(self, position):
 		if not self.stopped:
 			self.location.add(self.dna.genes[position])
 		
 	def draw(self):
-		x = self.location.x
-		y = self.location.y
-		self.rect = pygame.draw.circle( screen, self.color, ( int(x),int(y) ), self.radius)
+		if not self.stopped:
+			x = self.location.x
+			y = self.location.y
+			self.rect = pygame.draw.circle( screen, self.color, ( int(x),int(y) ), self.radius)
 	
 	def detect_collision(self, obstacle):
 		if not self.stopped:
 			if self.rect.colliderect(obstacle):
-				print("collison")
 				self.stopped = True
 				
 	def check_bounds(self):
@@ -97,7 +90,7 @@ class Population():
 	
 	def populate(self, num_individuals, num_genes):
 		for i in range(num_individuals):
-			x = 800//2
+			x = SCREEN_WIDTH//2
 			y = SCREEN_HEIGHT-1
 			rocket = Rocket(x,y, num_genes)
 
@@ -112,10 +105,11 @@ fps_clock = pygame.time.Clock()
 obstacle = pygame.Rect(250,350,200,100)
 target = PVector(400,20)
 num_genes = 300
+num_rockets = 200
 
 
 def main(args):
-	rockets = Population(.1, 200, num_genes)
+	rockets = Population(.1, num_rockets, num_genes)
 	running = True
 
 	while running:
@@ -135,16 +129,18 @@ def main(args):
 				rocket.detect_collision(obstacle)
 				rocket.check_bounds()
 				rocket.update(j)
-			print (j)
 
 			pygame.display.flip()
 			fps_clock.tick(30)
 		running = False
 	print("Done running")
 	
+	i=1
 	for rocket in rockets.rocket_population:
 		rocket.find_fitness(target)
-		print(rocket.fitness)
+		if rocket.stopped == False:
+			print(i,":",rocket.fitness)
+			i+=1
 	
 	running = True
 	while running:
